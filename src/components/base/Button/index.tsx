@@ -4,24 +4,33 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
 }
 
-export default function Button({ children, className = "", ...props }: ButtonProps) {
+const hasClassWithPrefix = (className: string, prefix: string) =>
+  className.split(/\s+/).some((cls) => cls.startsWith(prefix))
+
+const Button: React.FC<ButtonProps> = ({ children, className = "", ...props }) => {
+  const hasBg = hasClassWithPrefix(className, "bg-")
+  const hasHeight = hasClassWithPrefix(className, "h-")
+  const defaultBg = hasBg ? "" : "bg-purple-200 text-purple-600 hover:bg-purple-300 active:bg-purple-400"
+  const defaultHeight = hasHeight ? "" : "h-14"
+  const interactionStates = props.disabled ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 active:opacity-100"
   return (
     <button
       {...props}
       className={`
         inline-flex items-center justify-center
-        ${!className.includes("bg-") ? "bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white" : ""}
-        font-semibold
-        rounded-xl
-        transition ease-in-out duration-150
-        disabled:opacity-50 disabled:cursor-not-allowed
-        cursor-pointer
-        h-10
-        px-3
+        rounded-xl font-semibold text-lg
+        w-full px-3
+        transition-colors duration-150
+         ${defaultBg}
+        ${defaultHeight}
+        ${interactionStates}
         ${className}
+        cursor-pointer
       `}
     >
       {children}
     </button>
   )
 }
+
+export default Button

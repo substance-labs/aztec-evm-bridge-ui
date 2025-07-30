@@ -12,7 +12,10 @@ type ConnectButtonProps = {
 
 const ConnectButton: React.FC<ConnectButtonProps> = ({ connected, onClick }) => {
   return (
-    <Button onClick={onClick} className={`${connected ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+    <Button
+      onClick={onClick}
+      className={`h-10 ${connected ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+    >
       <Wallet className="w-4 h-4" />
     </Button>
   )

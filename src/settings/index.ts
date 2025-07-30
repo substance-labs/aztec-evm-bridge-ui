@@ -13,12 +13,20 @@ type ContractAddresses = {
   }
 }
 
+type Rpcs = {
+  [chainId: number]: string
+}
+
 type Settings = {
   contractAddresses: ContractAddresses
   assets: Asset[]
+  rpc: Rpcs
 }
 
 const settings: Settings = {
+  rpc: {
+    [AZTEC_7683_CHAIN_ID]: "https://aztec-alpha-testnet-fullnode.zkv.xyz/",
+  },
   contractAddresses: {
     [baseSepolia.id]: {
       gateway: "0xe91C15EF8cE69e7bd90a68E4aC576A242C84eAdF",
@@ -28,16 +36,6 @@ const settings: Settings = {
     },
   },
   assets: [
-    {
-      address: "0x1BDD24840e119DC2602dCC587Dd182812427A5Cc",
-      chain: baseSepolia,
-      decimals: 18,
-      id: "WETH_BASE_SEPOLIA",
-      logo: wethLogo,
-      name: "Wrapped ETH",
-      networkLogo: baseLogo,
-      symbol: "WETH",
-    },
     {
       address: "0x143c799188d6881bff72012bebb100d19b51ce0c90b378bfa3ba57498b5ddeeb",
       chain: {
@@ -49,6 +47,16 @@ const settings: Settings = {
       logo: wethLogo,
       name: "Wrapped ETH",
       networkLogo: aztecLogo,
+      symbol: "WETH",
+    },
+    {
+      address: "0x1BDD24840e119DC2602dCC587Dd182812427A5Cc",
+      chain: baseSepolia,
+      decimals: 18,
+      id: "WETH_BASE_SEPOLIA",
+      logo: wethLogo,
+      name: "Wrapped ETH",
+      networkLogo: baseLogo,
       symbol: "WETH",
     },
   ],

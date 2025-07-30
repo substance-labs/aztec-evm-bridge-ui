@@ -9,12 +9,12 @@ import useAztecWallet from "./use-aztec-wallet"
 import settings from "../settings"
 import { AZTEC_7683_CHAIN_ID } from "../settings/constants"
 
-import type { Operation, SimulateViewsResult } from "@azguardwallet/types"
+import type { Operation, SimulateViewsResult, OkResult } from "@azguardwallet/types"
 import type { Asset } from "../types"
 
 export interface UseAssetsResult {
   assets: Record<string, Asset>
-  refreshEvmBalanceByAsset: (asset: Asset) => Promise<void>
+  refreshBalanceByAsset: (asset: Asset) => Promise<void>
 }
 
 const useAssets = (): UseAssetsResult => {
@@ -26,7 +26,7 @@ const useAssets = (): UseAssetsResult => {
 
   const refreshAztecBalances = useCallback(async () => {
     try {
-      const aztecAssets = settings.assets.filter((asset) => asset.chain.id === AZTEC_7683_CHAIN_ID)
+      const aztecAssets = Object.values(assets).filter((asset) => asset.chain.id === AZTEC_7683_CHAIN_ID)
       const registerTokenOperations = aztecAssets.map((asset) => ({
         kind: "register_token",
         address: asset.address,
@@ -57,7 +57,7 @@ const useAssets = (): UseAssetsResult => {
 
       const balances = response
         .slice(aztecAssets.length) // NOTE: skip register_token responses
-        .map((r) => BigInt(((r as any).result as SimulateViewsResult).encoded[0][0]))
+        .map((r) => BigInt((r as OkResult<SimulateViewsResult>).result.encoded[0][0]))
 
       updateAsset(
         aztecAssets.reduce(
@@ -85,44 +85,7 @@ const useAssets = (): UseAssetsResult => {
     } catch (err) {
       console.error(err)
     }
-  }, [aztecAccount, azguardClient])
-
-  const refreshEvmBalanceByAsset = useCallback(
-    async (asset: Asset) => {
-      try {
-        const publicClient = createPublicClient({
-          chain: evmChain,
-          transport: http(),
-        })
-
-        const balance = await publicClient.readContract({
-          address: asset.address,
-          abi: erc20Abi,
-          functionName: "balanceOf",
-          args: [evmAddress],
-        })
-        const offchainBalance = BigNumber(balance).dividedBy(10 ** asset.decimals)
-
-        updateAsset({
-          [asset.id]: {
-            ...asset,
-            offchainBalance: offchainBalance.toFixed(),
-            formattedBalance: formatAssetAmount(offchainBalance, "", {
-              decimals: 4,
-              forceDecimals: true,
-            }),
-            formattedBalanceWithSymbol: formatAssetAmount(offchainBalance, asset.symbol, {
-              decimals: 4,
-              forceDecimals: true,
-            }),
-          },
-        })
-      } catch (err) {
-        console.error(err)
-      }
-    },
-    [evmAddress],
-  )
+  }, [aztecAccount, azguardClient, assets, updateAsset])
 
   const refreshEvmBalances = useCallback(async () => {
     try {
@@ -171,6 +134,99 @@ const useAssets = (): UseAssetsResult => {
     }
   }, [evmChain, evmAddress, assets, updateAsset])
 
+  const refreshAztecBalanceByAsset = useCallback(
+    async (asset: Asset) => {
+      try {
+        if (asset.chain.id !== AZTEC_7683_CHAIN_ID) throw new Error("Invalid asset")
+
+        const [response] = await azguardClient.execute([
+          {
+            kind: "simulate_views",
+            account: aztecAccount,
+            calls: [
+              {
+                kind: "call",
+                contract: asset.address,
+                method: "balance_of_private",
+                args: [aztecAccount.split(":").at(-1)],
+              },
+            ],
+          },
+        ] as Operation[])
+        if (response.status === "failed") throw new Error(response.error)
+
+        const balance = BigInt((response as OkResult<SimulateViewsResult>).result.encoded[0][0])
+        const offchainBalance = BigNumber(balance).dividedBy(10 ** asset.decimals)
+
+        updateAsset({
+          [asset.id]: {
+            ...asset,
+            offchainBalance: offchainBalance.toFixed(),
+            formattedBalance: formatAssetAmount(offchainBalance, "", {
+              decimals: 4,
+              forceDecimals: true,
+            }),
+            formattedBalanceWithSymbol: formatAssetAmount(offchainBalance, asset.symbol, {
+              decimals: 4,
+              forceDecimals: true,
+            }),
+          },
+        })
+      } catch (err) {
+        console.error(err)
+      }
+    },
+    [aztecAccount, azguardClient, updateAsset],
+  )
+
+  const refreshEvmBalanceByAsset = useCallback(
+    async (asset: Asset) => {
+      try {
+        if (asset.chain.id !== evmChain.id) throw new Error("Invalid asset")
+
+        const publicClient = createPublicClient({
+          chain: evmChain,
+          transport: http(),
+        })
+
+        const balance = await publicClient.readContract({
+          address: asset.address,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [evmAddress],
+        })
+        const offchainBalance = BigNumber(balance).dividedBy(10 ** asset.decimals)
+
+        updateAsset({
+          [asset.id]: {
+            ...asset,
+            offchainBalance: offchainBalance.toFixed(),
+            formattedBalance: formatAssetAmount(offchainBalance, "", {
+              decimals: 4,
+              forceDecimals: true,
+            }),
+            formattedBalanceWithSymbol: formatAssetAmount(offchainBalance, asset.symbol, {
+              decimals: 4,
+              forceDecimals: true,
+            }),
+          },
+        })
+      } catch (err) {
+        console.error(err)
+      }
+    },
+    [evmAddress, evmChain, updateAsset],
+  )
+
+  const refreshBalanceByAsset = useCallback(
+    async (asset: Asset) => {
+      if (asset.chain.id === evmChain.id) refreshEvmBalanceByAsset(asset)
+      if (asset.chain.id === AZTEC_7683_CHAIN_ID) refreshAztecBalanceByAsset(asset)
+      throw new Error("Invalid asset")
+    },
+    [evmChain, refreshAztecBalanceByAsset, refreshEvmBalanceByAsset],
+  )
+
   const loadPrices = useCallback(() => {
     updateAsset(
       settings.assets.reduce(
@@ -188,17 +244,19 @@ const useAssets = (): UseAssetsResult => {
 
   useEffect(() => {
     if (aztecAccount && !aztecBalancesLoaded.current) {
+      loadPrices()
       refreshAztecBalances()
       aztecBalancesLoaded.current = true
     }
-  }, [aztecAccount, refreshAztecBalances])
+  }, [aztecAccount, refreshAztecBalances, loadPrices])
 
   useEffect(() => {
     if (evmAddress && evmChain && !evmBalancesLoaded.current) {
+      loadPrices()
       refreshEvmBalances()
       evmBalancesLoaded.current = true
     }
-  }, [evmAddress, evmChain, refreshEvmBalances])
+  }, [evmAddress, evmChain, refreshEvmBalances, loadPrices])
 
   useEffect(() => {
     loadPrices()
@@ -207,7 +265,7 @@ const useAssets = (): UseAssetsResult => {
 
   return {
     assets,
-    refreshEvmBalanceByAsset,
+    refreshBalanceByAsset,
   }
 }
 

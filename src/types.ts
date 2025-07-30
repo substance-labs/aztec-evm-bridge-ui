@@ -1,8 +1,10 @@
 import type { Chain } from "viem"
 
+export type AssetChain = Chain | { id: number; name: string } // for Aztec-like custom chains
+
 export interface Asset {
   address: `0x${string}`
-  chain: Chain | { id: number; name: string } // for Aztec-like custom chains
+  chain: AssetChain
   decimals: number
   symbol: string
   balance?: bigint

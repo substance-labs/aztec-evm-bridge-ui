@@ -59,7 +59,7 @@ const SwapLine: React.FC<SwapLineProps> = ({
         {withMax && (
           <span
             className="text-xs text-blue-500 font-bold mr-1 cursor-pointer"
-            onClick={() => onChangeAmount(asset.balance)}
+            onClick={() => onChangeAmount(asset.formattedBalance)}
           >
             Max
           </span>

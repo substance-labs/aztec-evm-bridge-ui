@@ -45,7 +45,17 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AztecWalletProvider>
           <RouterProvider router={router} />
-          <ToastContainer />
+          <ToastContainer
+            position="bottom-right"
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            toastClassName="bg-gray-900 text-white rounded-lg shadow-lg p-4 mb-4"
+          />
         </AztecWalletProvider>
       </QueryClientProvider>
     </WagmiProvider>

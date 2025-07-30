@@ -1,5 +1,5 @@
 import { ArrowDown, Settings, Info } from "lucide-react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { Tooltip } from "react-tooltip"
 import { useAccount } from "wagmi"
 import { useAppKit } from "@reown/appkit/react"
@@ -14,16 +14,18 @@ import Toggle from "../../base/Toogle"
 import SwapLine from "../../complex/SwapLine"
 import Header from "../../complex/Header"
 import { AZTEC_7683_CHAIN_ID } from "../../../settings/constants"
+import { toast } from "react-toastify"
+import Button from "../../base/Button"
 
 const Swap = () => {
   const [showSettings, setShowSettings] = useState(false)
   const { ref } = useOutsideAlerter({
     trigger: () => setShowSettings(false),
   })
+  const swapIdsToasts = useRef({})
   const {
     confidential,
     invert,
-    isSwapping,
     onChangeSourceAssetAmount,
     onChangeTargetAssetAmount,
     setConfidential,
@@ -33,7 +35,61 @@ const Swap = () => {
     swap,
     targetAsset,
     targetAssetAmount,
-  } = useSwap()
+  } = useSwap({
+    onStep: (step) => {
+      const title = `Swapping ${step.sourceAmount} ${step.sourceAsset.symbol} on ${sourceAsset.chain.name} for at least ${step.targetAmount} ${step.targetAsset.symbol} on ${targetAsset.chain.name}`
+      if (step.id === "aztecToEvm_generatingProof") {
+        const id = toast.loading(
+          <div>
+            <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
+            <p className="text-gray-600 text-sm">Generating the proof ...</p>
+          </div>,
+        )
+        swapIdsToasts.current[step.swapId] = id
+      }
+      if (step.id === "aztecToEvm_transactionSent") {
+        const id = swapIdsToasts.current[step.swapId]
+        toast.update(id, {
+          render: (
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
+              <p className="text-gray-600 text-sm">
+                <a
+                  className="text-blue-600 hover:text-blue-800 underline font-medium transition-colors"
+                  href={step.data}
+                  target="blank"
+                >
+                  Transaction
+                </a>{" "}
+                sent. Waiting for a filler to fill the order ...
+              </p>
+            </div>
+          ),
+          type: "success",
+          isLoading: true,
+        })
+      }
+      if (step.id === "aztecToEvm_orderFilled") {
+        const id = swapIdsToasts.current[step.swapId]
+        toast.update(id, {
+          render: (
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
+              <p className="text-gray-600 text-sm">Swap completed!</p>
+            </div>
+          ),
+          type: "success",
+          isLoading: false,
+          autoClose: 5000,
+        })
+        delete swapIdsToasts.current[step.swapId]
+      }
+      if (step.id === "error") {
+        const id = swapIdsToasts.current[step.swapId]
+        toast.dismiss(id)
+      }
+    },
+  })
   const { isConnected: isAztecWalletConnected, isConnecting: isConnectingAztecWallet, connect } = useAztecWallet()
   const {
     isConnected: isEvmWalletConnected,
@@ -70,13 +126,12 @@ const Swap = () => {
       return "Connect EVM Wallet"
 
     if (isConnectingAztecWallet || isConnectingEvmWallet) return "Connecting ..."
-    if (selectedEvmChain.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID)
+    if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID)
       return "Wrong network"
 
     if (sourceAssetAmount === "") return "Enter an amount ..."
     if (BigNumber(sourceAssetAmount).isGreaterThan(sourceAsset?.offchainBalance)) return "Insufficient balance"
 
-    if (isSwapping) return "Confirming ..."
     if (isAztecWalletConnected && sourceAsset.chain.id === AZTEC_7683_CHAIN_ID) return "Confirm"
     if (isEvmWalletConnected && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) return "Confirm"
   }, [
@@ -87,8 +142,13 @@ const Swap = () => {
     selectedEvmChain,
     isConnectingEvmWallet,
     isConnectingAztecWallet,
-    isSwapping,
   ])
+
+  const btnDisabled = useMemo(() => {
+    if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) return true
+    const isConnecting = isConnectingEvmWallet || isConnectingAztecWallet
+    return isConnecting || BigNumber(sourceAssetAmount).isGreaterThan(sourceAsset?.offchainBalance)
+  }, [selectedEvmChain, isConnectingEvmWallet, isConnectingAztecWallet, sourceAssetAmount, sourceAsset])
 
   return (
     <>
@@ -127,7 +187,6 @@ const Swap = () => {
           </div>
           <div className="mt-3">
             <SwapLine
-              //disabled={swapLineDisabled}
               amount={sourceAssetAmount}
               asset={sourceAsset}
               onChangeAmount={onChangeSourceAssetAmount}
@@ -145,7 +204,6 @@ const Swap = () => {
           </div>
           <div className="mt-1">
             <SwapLine
-              //disabled={swapLineDisabled}
               amount={targetAssetAmount}
               asset={targetAsset}
               onChangeAmount={onChangeTargetAssetAmount}
@@ -153,13 +211,9 @@ const Swap = () => {
             />
           </div>
           <div className="mt-2">
-            <button
-              //disabled={btnDisabled}
-              className="pt-2 pb-2 pl-3 pr-3 bg-purple-200 text-purple-500 rounded-3xl font-semibold text-lg w-full h-14 hover:text-opacity-50 disabled:opacity-50 cursor-pointer"
-              onClick={onButtonClick}
-            >
+            <Button disabled={btnDisabled} onClick={onButtonClick}>
               {buttonText}
-            </button>
+            </Button>
           </div>
         </Box>
       </div>
