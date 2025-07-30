@@ -1,0 +1,50 @@
+import Modal from "../Modal"
+import { useAppKit } from "@reown/appkit/react"
+import { useAccount } from "wagmi"
+
+import useAztecWallet from "../../../hooks/use-aztec-wallet"
+
+import Button from "../../base/Button"
+
+import type { ModalProps } from "../Modal"
+import { copyToClipboard } from "../../../utils/clipboard"
+
+const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
+  const { account, formattedAccount, isConnected: isAztecWalletConnected, connect } = useAztecWallet()
+  const { open } = useAppKit()
+  const { address: evmAddress, isConnected: isEvmWalletConnected } = useAccount()
+
+  return (
+    <Modal visible={visible} title={"Wallets"} onClose={onClose}>
+      {!isEvmWalletConnected ? (
+        <Button className="w-full  mb-4 w-48" onClick={() => open()}>
+          Connect EVM wallet
+        </Button>
+      ) : (
+        <button
+          className="text-center mb-4 bg-gray-100 h-10 w-48 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+          onClick={() => copyToClipboard(evmAddress)}
+          disabled={!isEvmWalletConnected}
+        >
+          <span className="font-mono text-xs text-gray-700 text-center">{`evm:${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}`}</span>
+        </button>
+      )}
+
+      {!isAztecWalletConnected ? (
+        <Button className="w-48" onClick={connect}>
+          Connect Aztec wallet
+        </Button>
+      ) : (
+        <button
+          className="text-center bg-gray-100 h-10 w-48 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+          onClick={() => copyToClipboard(account)}
+          disabled={!isAztecWalletConnected}
+        >
+          <span className="font-mono text-xs text-gray-700">{`aztec:${formattedAccount}`}</span>
+        </button>
+      )}
+    </Modal>
+  )
+}
+
+export default WalletModal
