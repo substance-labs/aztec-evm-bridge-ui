@@ -5,6 +5,7 @@ import { useAccount } from "wagmi"
 import { useAppKit } from "@reown/appkit/react"
 import BigNumber from "bignumber.js"
 import { toast } from "react-toastify"
+import { AnimatePresence, motion } from "framer-motion"
 
 import useOutsideAlerter from "../../../hooks/use-outside-alerter"
 import useSwap from "../../../hooks/use-swap"
@@ -16,6 +17,8 @@ import Toggle from "../../base/Toogle"
 import SwapLine from "../../complex/SwapLine"
 import Header from "../../complex/Header"
 import Button from "../../base/Button"
+import Footer from "../../complex/Footer"
+import MainLayout from "../../layouts/MainLayout"
 
 const Swap = () => {
   const [showSettings, setShowSettings] = useState(false)
@@ -181,73 +184,82 @@ const Swap = () => {
   }, [selectedEvmChain, isConnectingEvmWallet, isConnectingAztecWallet, sourceAmount, sourceAsset])
 
   return (
-    <>
-      <Header />
-      <div className="p-2 md:p-0">
-        <Box className="max-w-md mx-auto pt-3 pb-1 pl-1 pr-1 mt-10">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 text-sm font-semibold ml-2">{"Swap"}</span>
-            <div className="relative">
-              <div className={`flex mr-2 items-center cursor-pointer`}>
-                <Settings
-                  width={24}
-                  height={24}
-                  className="text-gray-600"
-                  onClick={() => setShowSettings(!showSettings)}
-                />
-              </div>
-              {showSettings && (
-                <div ref={ref}>
-                  <Box className={"absolute px-1 py-3 flex justify-between w-72 h-24"}>
-                    <div className="flex">
-                      <span className="text-gray-600 text-sm ml-1">Confidential</span>
-                      <Info
-                        size={20}
-                        className="ml-1"
-                        data-tooltip-id="confidential-tooltip"
-                        data-tooltip-content="Keep your address confidential. You’ll need to claim the tokens yourself"
-                      />
-                    </div>
-                    <Toggle className="mr-1" active={confidential} onChange={(val) => updateConfidential(val)} />
-                    <Tooltip id="confidential-tooltip" />
-                  </Box>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="mt-3">
-            <SwapLine
-              amount={sourceAmount}
-              asset={sourceAsset}
-              onChangeAmount={onChangeSourceAssetAmount}
-              withMax
-              withArrowDown
-            />
-          </div>
+    <MainLayout>
+      <Box className="max-w-md mx-auto pt-3 pb-1 pl-1 pr-1 mt-10">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600 text-sm font-semibold ml-2">{"Swap"}</span>
           <div className="relative">
-            <button
-              className="absolute bg-gray-100 p-1 rounded-lg border-4 border-white hover:bg-gray-200 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-              onClick={() => invert()}
-            >
-              <ArrowDown className="text-gray-600 " />
-            </button>
+            <div className={`flex mr-2 items-center cursor-pointer`}>
+              <Settings
+                width={24}
+                height={24}
+                className="text-gray-600"
+                onClick={() => setShowSettings(!showSettings)}
+              />
+            </div>
+            <AnimatePresence>
+              {showSettings && (
+                <motion.div
+                  key="settings-box"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                >
+                  <div ref={ref}>
+                    <Box className="absolute px-1 py-3 flex justify-between w-58 h-24">
+                      <div>
+                        <div className="flex items-center">
+                          <span className="text-gray-600 text-sm ml-1">Confidential</span>
+                          <Info
+                            size={16}
+                            className="ml-1"
+                            data-tooltip-id="confidential-tooltip"
+                            data-tooltip-content="Keep your address confidential. You’ll need to claim the tokens yourself"
+                          />
+                        </div>
+                      </div>
+                      <Toggle className="mr-1" active={confidential} onChange={(val) => updateConfidential(val)} />
+                      <Tooltip id="confidential-tooltip" />
+                    </Box>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="mt-1">
-            <SwapLine
-              amount={targetAmount}
-              asset={targetAsset}
-              onChangeAmount={onChangeTargetAssetAmount}
-              withArrowDown
-            />
-          </div>
-          <div className="mt-2">
-            <Button disabled={btnDisabled} onClick={onButtonClick}>
-              {buttonText}
-            </Button>
-          </div>
-        </Box>
-      </div>
-    </>
+        </div>
+        <div className="mt-3">
+          <SwapLine
+            amount={sourceAmount}
+            asset={sourceAsset}
+            onChangeAmount={onChangeSourceAssetAmount}
+            withMax
+            withArrowDown
+          />
+        </div>
+        <div className="relative">
+          <button
+            className="absolute bg-gray-100 p-1 rounded-lg border-4 border-white hover:bg-gray-200 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+            onClick={() => invert()}
+          >
+            <ArrowDown className="text-gray-600 " />
+          </button>
+        </div>
+        <div className="mt-1">
+          <SwapLine
+            amount={targetAmount}
+            asset={targetAsset}
+            onChangeAmount={onChangeTargetAssetAmount}
+            withArrowDown
+          />
+        </div>
+        <div className="mt-2">
+          <Button disabled={btnDisabled} onClick={onButtonClick}>
+            {buttonText}
+          </Button>
+        </div>
+      </Box>
+    </MainLayout>
   )
 }
 

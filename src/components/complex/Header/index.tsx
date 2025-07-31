@@ -1,6 +1,8 @@
 import { Fragment, useMemo, useState } from "react"
 import { useAccount } from "wagmi"
 import { Wallet } from "lucide-react"
+import { motion } from "framer-motion"
+import { Lock, Globe } from "lucide-react"
 
 import useAztecWallet from "../../../hooks/use-aztec-wallet"
 
