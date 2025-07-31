@@ -58,12 +58,13 @@ const SwapLine: React.FC<SwapLineProps> = ({
       <div className="flex items-center justify-end mb-4 w-full">
         <span className="text-xs text-gray-600 mr-1">Balance: {asset.formattedBalance || "-"}</span>
         {withMax && (
-          <span
-            className="text-xs text-blue-500 font-bold mr-1 cursor-pointer"
+          <button
+            disabled={!asset.balance}
+            className="text-xs font-bold mr-1 cursor-pointer text-blue-500 disabled:text-gray-300 disabled:cursor-not-allowed"
             onClick={() => onChangeAmount(asset.offchainBalance)}
           >
             Max
-          </span>
+          </button>
         )}
       </div>
     </div>
