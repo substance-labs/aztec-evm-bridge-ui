@@ -21,8 +21,8 @@ const useAssets = (): UseAssetsResult => {
   const { assets, updateAsset } = useAppStore()
   const { client: azguardClient, account: aztecAccount } = useAztecWallet()
   const { chain: evmChain, address: evmAddress } = useAccount()
-  const evmBalancesLoaded = useRef(false)
-  const aztecBalancesLoaded = useRef(false)
+  const currentEvmAddress = useRef(null)
+  const currentAztecAddress = useRef(null)
 
   const refreshAztecBalances = useCallback(async () => {
     try {
@@ -113,6 +113,7 @@ const useAssets = (): UseAssetsResult => {
             const offchainBalance = BigNumber(balance).dividedBy(10 ** asset.decimals)
             acc[asset.id] = {
               ...asset,
+              price: 1, // TODO
               balance,
               offchainBalance: offchainBalance.toFixed(),
               formattedBalance: formatAssetAmount(offchainBalance, "", {
@@ -161,6 +162,7 @@ const useAssets = (): UseAssetsResult => {
         updateAsset({
           [asset.id]: {
             ...asset,
+            price: 1, // TODO
             offchainBalance: offchainBalance.toFixed(),
             formattedBalance: formatAssetAmount(offchainBalance, "", {
               decimals: 4,
@@ -243,20 +245,18 @@ const useAssets = (): UseAssetsResult => {
   }, [updateAsset])
 
   useEffect(() => {
-    if (aztecAccount && !aztecBalancesLoaded.current) {
-      loadPrices()
+    if (aztecAccount && currentAztecAddress.current !== aztecAccount) {
       refreshAztecBalances()
-      aztecBalancesLoaded.current = true
+      currentAztecAddress.current = aztecAccount
     }
-  }, [aztecAccount, refreshAztecBalances, loadPrices])
+  }, [aztecAccount, refreshAztecBalances])
 
   useEffect(() => {
-    if (evmAddress && evmChain && !evmBalancesLoaded.current) {
-      loadPrices()
+    if (evmAddress && evmChain && currentEvmAddress.current !== evmAddress) {
       refreshEvmBalances()
-      evmBalancesLoaded.current = true
+      currentEvmAddress.current = evmAddress
     }
-  }, [evmAddress, evmChain, refreshEvmBalances, loadPrices])
+  }, [evmAddress, evmChain, refreshEvmBalances])
 
   useEffect(() => {
     loadPrices()

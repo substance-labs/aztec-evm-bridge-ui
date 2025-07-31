@@ -4,17 +4,17 @@ import { Tooltip } from "react-tooltip"
 import { useAccount } from "wagmi"
 import { useAppKit } from "@reown/appkit/react"
 import BigNumber from "bignumber.js"
+import { toast } from "react-toastify"
 
 import useOutsideAlerter from "../../../hooks/use-outside-alerter"
 import useSwap from "../../../hooks/use-swap"
 import useAztecWallet from "../../../hooks/use-aztec-wallet"
+import { AZTEC_7683_CHAIN_ID } from "../../../settings/constants"
 
 import Box from "../../base/Box"
 import Toggle from "../../base/Toogle"
 import SwapLine from "../../complex/SwapLine"
 import Header from "../../complex/Header"
-import { AZTEC_7683_CHAIN_ID } from "../../../settings/constants"
-import { toast } from "react-toastify"
 import Button from "../../base/Button"
 
 const Swap = () => {
@@ -38,16 +38,16 @@ const Swap = () => {
   } = useSwap({
     onStep: (step) => {
       const title = `Swapping ${step.sourceAmount} ${step.sourceAsset.symbol} on ${sourceAsset.chain.name} for at least ${step.targetAmount} ${step.targetAsset.symbol} on ${targetAsset.chain.name}`
-      if (step.id === "aztecToEvm_generatingProof") {
+      if (step.id === "aztecToAztec_start") {
         const id = toast.loading(
           <div>
             <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
-            <p className="text-gray-600 text-sm">Generating the proof ...</p>
+            <p className="text-gray-600 text-sm">Generating the proof needed to open the order ...</p>
           </div>,
         )
         swapIdsToasts.current[step.swapId] = id
       }
-      if (step.id === "aztecToEvm_transactionSent") {
+      if (step.id === "aztecToEvm_orderOpened" || step.id === "evmToAztec_orderOpened") {
         const id = swapIdsToasts.current[step.swapId]
         toast.update(id, {
           render: (
@@ -59,9 +59,9 @@ const Swap = () => {
                   href={step.data}
                   target="blank"
                 >
-                  Transaction
+                  Order
                 </a>{" "}
-                sent. Waiting for a filler to fill the order ...
+                created. Waiting for a filler to fill the order ...
               </p>
             </div>
           ),
@@ -69,7 +69,7 @@ const Swap = () => {
           isLoading: true,
         })
       }
-      if (step.id === "aztecToEvm_orderFilled") {
+      if (step.id === "aztecToEvm_orderFilled" || step.id === "evmToAztec_orderClaimed") {
         const id = swapIdsToasts.current[step.swapId]
         toast.update(id, {
           render: (
@@ -84,9 +84,33 @@ const Swap = () => {
         })
         delete swapIdsToasts.current[step.swapId]
       }
+      if (step.id === "evmToAztec_start") {
+        const id = toast.loading(
+          <div>
+            <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
+            <p className="text-gray-600 text-sm">Opening the order ...</p>
+          </div>,
+        )
+        swapIdsToasts.current[step.swapId] = id
+      }
+
+      if (step.id === "evmToAztec_orderFilled") {
+        const id = swapIdsToasts.current[step.swapId]
+        toast.update(id, {
+          render: (
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
+              <p className="text-gray-600 text-sm">Order filled! Generating the proof needed to claim it ...</p>
+            </div>
+          ),
+          type: "success",
+          isLoading: true,
+        })
+      }
       if (step.id === "error") {
         const id = swapIdsToasts.current[step.swapId]
         toast.dismiss(id)
+        delete swapIdsToasts.current[step.swapId]
       }
     },
   })

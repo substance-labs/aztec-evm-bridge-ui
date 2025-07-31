@@ -17,15 +17,21 @@ type Rpcs = {
   [chainId: number]: string
 }
 
+type Explorers = Rpcs
+
 type Settings = {
   contractAddresses: ContractAddresses
   assets: Asset[]
   rpc: Rpcs
+  explorers: Explorers
 }
 
 const settings: Settings = {
   rpc: {
     [AZTEC_7683_CHAIN_ID]: "https://aztec-alpha-testnet-fullnode.zkv.xyz/",
+  },
+  explorers: {
+    [baseSepolia.id]: "https://sepolia.basescan.org",
   },
   contractAddresses: {
     [baseSepolia.id]: {

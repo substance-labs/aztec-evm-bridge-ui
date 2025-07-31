@@ -33,53 +33,53 @@ export interface ResolvedOrder {
   fillInstructions: FillInstruction[]
 }
 
-export const parseOpenLog = (log1: Fr[], log2: Fr[]) => {
-  let orderId1 = log1[0]!.toString()
-  const residualBytes1 = log1[12]!.toString()
+export const parseOpenLog = (fields1: Fr[], fields2: Fr[]) => {
+  let orderId1 = fields1[0]!.toString()
+  const residualBytes1 = fields1[12]!.toString()
   const resolvedOrder1 =
     "0x" +
-    log1[1]!.toString().slice(4) +
+    fields1[1]!.toString().slice(4) +
     residualBytes1.slice(6, 8) +
-    log1[2]!.toString().slice(4) +
+    fields1[2]!.toString().slice(4) +
     residualBytes1.slice(8, 10) +
-    log1[3]!.toString().slice(4) +
+    fields1[3]!.toString().slice(4) +
     residualBytes1.slice(10, 12) +
-    log1[4]!.toString().slice(4) +
+    fields1[4]!.toString().slice(4) +
     residualBytes1.slice(12, 14) +
-    log1[5]!.toString().slice(4) +
+    fields1[5]!.toString().slice(4) +
     residualBytes1.slice(14, 16) +
-    log1[6]!.toString().slice(4) +
+    fields1[6]!.toString().slice(4) +
     residualBytes1.slice(16, 18) +
-    log1[7]!.toString().slice(4) +
+    fields1[7]!.toString().slice(4) +
     residualBytes1.slice(18, 20) +
-    log1[8]!.toString().slice(4) +
+    fields1[8]!.toString().slice(4) +
     residualBytes1.slice(20, 22) +
-    log1[9]!.toString().slice(4) +
+    fields1[9]!.toString().slice(4) +
     residualBytes1.slice(22, 24) +
-    log1[10]!.toString().slice(4) +
+    fields1[10]!.toString().slice(4) +
     residualBytes1.slice(24, 26) +
-    log1[11]!.toString().slice(4, 44)
+    fields1[11]!.toString().slice(4, 44)
 
-  let orderId2 = log2[0]!.toString()
-  const residualBytes2 = log2[10]!.toString()
+  let orderId2 = fields2[0]!.toString()
+  const residualBytes2 = fields2[10]!.toString()
   const resolvedOrder2 =
-    log2[1]!.toString().slice(4) +
+    fields2[1]!.toString().slice(4) +
     residualBytes2.slice(6, 8) +
-    log2[2]!.toString().slice(4) +
+    fields2[2]!.toString().slice(4) +
     residualBytes2.slice(8, 10) +
-    log2[3]!.toString().slice(4) +
+    fields2[3]!.toString().slice(4) +
     residualBytes2.slice(10, 12) +
-    log2[4]!.toString().slice(4) +
+    fields2[4]!.toString().slice(4) +
     residualBytes2.slice(12, 14) +
-    log2[5]!.toString().slice(4) +
+    fields2[5]!.toString().slice(4) +
     residualBytes2.slice(14, 16) +
-    log2[6]!.toString().slice(4) +
+    fields2[6]!.toString().slice(4) +
     residualBytes2.slice(16, 18) +
-    log2[7]!.toString().slice(4) +
+    fields2[7]!.toString().slice(4) +
     residualBytes2.slice(18, 20) +
-    log2[8]!.toString().slice(4) +
+    fields2[8]!.toString().slice(4) +
     residualBytes2.slice(20, 22) +
-    log2[9]!.toString().slice(4, 38)
+    fields2[9]!.toString().slice(4, 38)
 
   orderId1 = "0x" + orderId1.slice(4) + residualBytes1.slice(4, 6)
   orderId2 = "0x" + orderId2.slice(4) + residualBytes2.slice(4, 6)
@@ -89,6 +89,42 @@ export const parseOpenLog = (log1: Fr[], log2: Fr[]) => {
   return {
     orderId: orderId1,
     resolvedOrder: resolvedOrder1 + resolvedOrder2,
+  }
+}
+
+export const parseFilledLog = (fields: Fr[]) => {
+  let orderId = fields[0].toString()
+  let fillerData = fields[11].toString()
+  const residualBytes = fields[12].toString()
+  const originData =
+    "0x" +
+    fields[1].toString().slice(4) +
+    residualBytes.slice(6, 8) +
+    fields[2].toString().slice(4) +
+    residualBytes.slice(8, 10) +
+    fields[3].toString().slice(4) +
+    residualBytes.slice(10, 12) +
+    fields[4].toString().slice(4) +
+    residualBytes.slice(12, 14) +
+    fields[5].toString().slice(4) +
+    residualBytes.slice(14, 16) +
+    fields[6].toString().slice(4) +
+    residualBytes.slice(16, 18) +
+    fields[7].toString().slice(4) +
+    residualBytes.slice(18, 20) +
+    fields[8].toString().slice(4) +
+    residualBytes.slice(20, 22) +
+    fields[9].toString().slice(4) +
+    residualBytes.slice(22, 24) +
+    fields[10].toString().slice(4, 30)
+
+  orderId = "0x" + orderId.slice(4) + residualBytes.slice(4, 6)
+  fillerData = "0x" + fillerData.slice(4) + residualBytes.slice(24, 26)
+
+  return {
+    orderId,
+    fillerData,
+    originData,
   }
 }
 
