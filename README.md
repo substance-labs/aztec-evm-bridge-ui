@@ -17,13 +17,7 @@ cd aztec-evm-intent-ui
 Make sure you have [nvm](https://github.com/nvm-sh/nvm) installed:
 
 ```bash
-nvm use 22
-```
-
-If not installed:
-
-```bash
-nvm install 22
+nvm use
 ```
 
 ### 3. Install dependencies
