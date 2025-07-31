@@ -1,5 +1,5 @@
 import type { Fr } from "@aztec/aztec.js"
-import type { ExtendedPublicLog } from "@aztec/stdlib/logs"
+import type { ExtendedPublicLog, PublicLog } from "@aztec/stdlib/logs"
 
 export type ParsedFilledLog = {
   orderId: `0x${string}`
@@ -162,19 +162,19 @@ export const parseResolvedCrossChainOrder = (resolvedOrder: string): ResolvedOrd
 }
 
 export const getResolvedOrdersByLogs = (logs: ExtendedPublicLog[]): ResolvedOrder[] => {
-  const groupedLogs = logs.reduce((acc, obj) => {
+  const groupedLogs = logs.reduce<Record<string, ExtendedPublicLog[]>>((acc, obj) => {
     const groupKey = obj.log.fields[0].toString()
     if (!acc[groupKey]) {
       acc[groupKey] = []
     }
     acc[groupKey].push(obj)
     return acc
-  }, {} as any)
+  }, {})
 
   const joinedLogs = Object.keys(groupedLogs)
     .filter((orderId) => {
       const logs = groupedLogs[orderId].filter(
-        ({ log }: { log: any }) => log.getEmittedFields().length === 11 || log.getEmittedFields().length === 13,
+        ({ log }: { log: PublicLog }) => log.getEmittedFields().length === 11 || log.getEmittedFields().length === 13,
       )
       return logs.length === 2
     })

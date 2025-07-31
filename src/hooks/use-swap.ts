@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useAccount, useWalletClient } from "wagmi"
 import BigNumber from "bignumber.js"
-import { createClient, createPublicClient, erc20Abi, hexToBytes, http, padHex, type Chain } from "viem"
+import { createClient, createPublicClient, erc20Abi, hexToBytes, http, padHex, type Chain, type Log } from "viem"
 import { AztecAddress, createAztecNodeClient, Fr, TxHash } from "@aztec/aztec.js"
 import { waitForTransactionReceipt } from "viem/actions"
 import { poseidon2Hash } from "@aztec/foundation/crypto"
@@ -29,7 +29,11 @@ import { getAztecToEvmBatch } from "../utils/azguard-batches"
 import { getAztecAddressFromAzguardAccount } from "../utils/account"
 
 import type { Asset } from "../types"
-import type { OkResult, SimulateViewsResult } from "@azguardwallet/types"
+import type { OkResult, SendTransactionResult, SimulateViewsResult } from "@azguardwallet/types"
+
+type LogWithTopics = Log & {
+  topics: string[]
+}
 
 export type StepId =
   | "aztecToAztec_start"
@@ -48,7 +52,7 @@ export interface Step {
   targetAsset: Asset
   sourceAmount: string
   targetAmount: string
-  data?: any
+  data?: string
 }
 export interface useSwapOptions {
   onStep: (baseStep: Step) => void
@@ -189,7 +193,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         }
       })
 
-      const txHash = (response[2] as any).result
+      const txHash = (response[2] as OkResult<SendTransactionResult>).result
       console.log("aztec_to_evm: transaction sent:", txHash)
       onStep({
         ...baseStep,
@@ -345,7 +349,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       })
       console.log("evm_to_aztec: transaction sent:", txHash)
       const receipt = await waitForTransactionReceipt(evmPublicClient, { hash: txHash })
-      const log = (receipt.logs as any).find(
+      const log = (receipt.logs as LogWithTopics[]).find(
         ({ topics }) => topics[0] === "0x3448bbc2203c608599ad448eeb1007cea04b788ac631f9f558e8dd01a3c27b3d", // Open
       )
 

@@ -15,9 +15,7 @@ import { AZTEC_7683_CHAIN_ID } from "../../../settings/constants"
 import Box from "../../base/Box"
 import Toggle from "../../base/Toogle"
 import SwapLine from "../../complex/SwapLine"
-import Header from "../../complex/Header"
 import Button from "../../base/Button"
-import Footer from "../../complex/Footer"
 import MainLayout from "../../layouts/MainLayout"
 
 const Swap = () => {
