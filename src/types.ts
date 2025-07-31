@@ -17,3 +17,9 @@ export interface Asset {
   id: string
   name: string
 }
+
+export interface Order {
+  fillDeadline: number
+  orderDataType: `0x${string}`
+  orderData: `0x${string}`
+}

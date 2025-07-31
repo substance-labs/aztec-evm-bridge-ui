@@ -8,6 +8,7 @@ import { formatAssetAmount } from "../utils/amount"
 import useAztecWallet from "./use-aztec-wallet"
 import settings from "../settings"
 import { AZTEC_7683_CHAIN_ID } from "../settings/constants"
+import { getAztecAddressFromAzguardAccount } from "../utils/account"
 
 import type { Operation, SimulateViewsResult, OkResult } from "@azguardwallet/types"
 import type { Asset } from "../types"
@@ -18,11 +19,12 @@ export interface UseAssetsResult {
 }
 
 const useAssets = (): UseAssetsResult => {
-  const { assets, updateAsset } = useAppStore()
+  const { assets, updateAsset, confidential } = useAppStore()
   const { client: azguardClient, account: aztecAccount } = useAztecWallet()
   const { chain: evmChain, address: evmAddress } = useAccount()
   const currentEvmAddress = useRef(null)
   const currentAztecAddress = useRef(null)
+  const currentConfidential = useRef(null)
 
   const refreshAztecBalances = useCallback(async () => {
     try {
@@ -36,8 +38,8 @@ const useAssets = (): UseAssetsResult => {
       const callOperations = aztecAssets.map((asset) => ({
         kind: "call",
         contract: asset.address,
-        method: "balance_of_private",
-        args: [aztecAccount.split(":").at(-1)],
+        method: confidential ? "balance_of_private" : "balance_of_public",
+        args: [getAztecAddressFromAzguardAccount(aztecAccount)],
       }))
 
       const response = await azguardClient.execute([
@@ -85,7 +87,7 @@ const useAssets = (): UseAssetsResult => {
     } catch (err) {
       console.error(err)
     }
-  }, [aztecAccount, azguardClient, assets, updateAsset])
+  }, [aztecAccount, azguardClient, assets, confidential, updateAsset])
 
   const refreshEvmBalances = useCallback(async () => {
     try {
@@ -148,8 +150,8 @@ const useAssets = (): UseAssetsResult => {
               {
                 kind: "call",
                 contract: asset.address,
-                method: "balance_of_private",
-                args: [aztecAccount.split(":").at(-1)],
+                method: confidential ? "balance_of_private" : "balance_of_public",
+                args: [getAztecAddressFromAzguardAccount(aztecAccount)],
               },
             ],
           },
@@ -178,7 +180,7 @@ const useAssets = (): UseAssetsResult => {
         console.error(err)
       }
     },
-    [aztecAccount, azguardClient, updateAsset],
+    [aztecAccount, azguardClient, confidential, updateAsset],
   )
 
   const refreshEvmBalanceByAsset = useCallback(
@@ -245,11 +247,17 @@ const useAssets = (): UseAssetsResult => {
   }, [updateAsset])
 
   useEffect(() => {
-    if (aztecAccount && currentAztecAddress.current !== aztecAccount) {
+    if (
+      aztecAccount &&
+      (currentAztecAddress.current !== aztecAccount ||
+        currentConfidential.current !== confidential ||
+        currentConfidential.current === null)
+    ) {
       refreshAztecBalances()
       currentAztecAddress.current = aztecAccount
+      currentConfidential.current = confidential
     }
-  }, [aztecAccount, refreshAztecBalances])
+  }, [aztecAccount, refreshAztecBalances, confidential])
 
   useEffect(() => {
     if (evmAddress && evmChain && currentEvmAddress.current !== evmAddress) {

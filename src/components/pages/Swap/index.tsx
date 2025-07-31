@@ -28,13 +28,13 @@ const Swap = () => {
     invert,
     onChangeSourceAssetAmount,
     onChangeTargetAssetAmount,
-    setConfidential,
+    updateConfidential,
     sourceAsset,
-    sourceAssetAmount,
+    sourceAmount,
     //step,
     swap,
     targetAsset,
-    targetAssetAmount,
+    targetAmount,
   } = useSwap({
     onStep: (step) => {
       const title = `Swapping ${step.sourceAmount} ${step.sourceAsset.symbol} on ${sourceAsset.chain.name} for at least ${step.targetAmount} ${step.targetAsset.symbol} on ${targetAsset.chain.name}`
@@ -93,7 +93,6 @@ const Swap = () => {
         )
         swapIdsToasts.current[step.swapId] = id
       }
-
       if (step.id === "evmToAztec_orderFilled") {
         const id = swapIdsToasts.current[step.swapId]
         toast.update(id, {
@@ -153,8 +152,8 @@ const Swap = () => {
     if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID)
       return "Wrong network"
 
-    if (sourceAssetAmount === "") return "Enter an amount ..."
-    if (BigNumber(sourceAssetAmount).isGreaterThan(sourceAsset?.offchainBalance)) return "Insufficient balance"
+    if (sourceAmount === "") return "Enter an amount ..."
+    if (BigNumber(sourceAmount).isGreaterThan(sourceAsset?.offchainBalance)) return "Insufficient balance"
 
     if (isAztecWalletConnected && sourceAsset.chain.id === AZTEC_7683_CHAIN_ID) return "Confirm"
     if (isEvmWalletConnected && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) return "Confirm"
@@ -162,7 +161,7 @@ const Swap = () => {
     isAztecWalletConnected,
     isEvmWalletConnected,
     sourceAsset,
-    sourceAssetAmount,
+    sourceAmount,
     selectedEvmChain,
     isConnectingEvmWallet,
     isConnectingAztecWallet,
@@ -171,8 +170,8 @@ const Swap = () => {
   const btnDisabled = useMemo(() => {
     if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) return true
     const isConnecting = isConnectingEvmWallet || isConnectingAztecWallet
-    return isConnecting || BigNumber(sourceAssetAmount).isGreaterThan(sourceAsset?.offchainBalance)
-  }, [selectedEvmChain, isConnectingEvmWallet, isConnectingAztecWallet, sourceAssetAmount, sourceAsset])
+    return isConnecting || BigNumber(sourceAmount).isGreaterThan(sourceAsset?.offchainBalance)
+  }, [selectedEvmChain, isConnectingEvmWallet, isConnectingAztecWallet, sourceAmount, sourceAsset])
 
   return (
     <>
@@ -202,7 +201,7 @@ const Swap = () => {
                         data-tooltip-content="Keep your address confidential. You’ll need to claim the tokens yourself"
                       />
                     </div>
-                    <Toggle disabled className="mr-1" active={confidential} onChange={(val) => setConfidential(val)} />
+                    <Toggle className="mr-1" active={confidential} onChange={(val) => updateConfidential(val)} />
                     <Tooltip id="confidential-tooltip" />
                   </Box>
                 </div>
@@ -211,7 +210,7 @@ const Swap = () => {
           </div>
           <div className="mt-3">
             <SwapLine
-              amount={sourceAssetAmount}
+              amount={sourceAmount}
               asset={sourceAsset}
               onChangeAmount={onChangeSourceAssetAmount}
               withMax
@@ -228,7 +227,7 @@ const Swap = () => {
           </div>
           <div className="mt-1">
             <SwapLine
-              amount={targetAssetAmount}
+              amount={targetAmount}
               asset={targetAsset}
               onChangeAmount={onChangeTargetAssetAmount}
               withArrowDown

@@ -3,18 +3,19 @@ import { useAccount, useWalletClient } from "wagmi"
 import BigNumber from "bignumber.js"
 import { createClient, createPublicClient, erc20Abi, hexToBytes, http, padHex, type Chain } from "viem"
 import { AztecAddress, createAztecNodeClient, Fr, TxHash } from "@aztec/aztec.js"
-import { TokenContractArtifact } from "@aztec/noir-contracts.js/Token"
 import { waitForTransactionReceipt } from "viem/actions"
+import { poseidon2Hash } from "@aztec/foundation/crypto"
 
 import { useAssets } from "./use-assets"
 import settings from "../settings"
 import { AztecGateway7683ContractArtifact } from "../utils/artifacts/AztecGateway7683/AztecGateway7683"
 import {
-  ORDER_DATA_TYPE,
   AZTEC_7683_CHAIN_ID,
+  INITIATED_PRIVATELY,
+  ORDER_DATA_TYPE,
   PRIVATE_ORDER,
   PRIVATE_SENDER,
-  INITIATED_PRIVATELY,
+  PUBLIC_ORDER,
 } from "../settings/constants"
 import { OrderData } from "../utils/OrderData"
 import useAztecWallet from "./use-aztec-wallet"
@@ -22,10 +23,12 @@ import { toOnChainAmount } from "../utils/amount"
 import { sleep } from "../utils/sleep"
 import { getResolvedOrdersByLogs, parseFilledLog } from "../utils/aztec-gateway"
 import l2Gateway7683Abi from "../utils/abi/l2Gateway7683.json"
+import { useAppStore } from "../store"
+import { getAztecToEvmBatch } from "../utils/azguard-batches"
+import { getAztecAddressFromAzguardAccount } from "../utils/account"
 
 import type { Asset } from "../types"
 import type { OkResult, SimulateViewsResult } from "@azguardwallet/types"
-import { poseidon2Hash } from "@aztec/foundation/crypto"
 
 export type StepId =
   | "aztecToAztec_start"
@@ -50,6 +53,7 @@ export interface useSwapOptions {
 }
 
 const useSwap = ({ onStep }: useSwapOptions) => {
+  const { confidential, updateConfidential } = useAppStore()
   const { assets, refreshBalanceByAsset } = useAssets()
   const { data: evmWalletClient } = useWalletClient()
   const { client: aztecWalletClient, account: aztecAccount } = useAztecWallet()
@@ -57,16 +61,15 @@ const useSwap = ({ onStep }: useSwapOptions) => {
   const { address: evmAddress, chain: evmChain } = useAccount()
   const [sourceAsset, setSourceAsset] = useState<Asset>(Object.values(assets)[0])
   const [targetAsset, setTargetAsset] = useState<Asset>(Object.values(assets)[1])
-  const [sourceAssetAmount, setSourceAssetAmount] = useState<string>("")
-  const [targetAssetAmount, setTargetAssetAmount] = useState<string>("")
-  const [confidential, setConfidential] = useState<boolean>(true)
+  const [sourceAmount, setSourceAmount] = useState<string>("")
+  const [targetAmount, setTargetAmount] = useState<string>("")
   const initSource = useRef(false)
   const initTarget = useRef(false)
 
   useEffect(() => {
     if (!evmAddress) {
-      setSourceAssetAmount("")
-      setTargetAssetAmount("")
+      setSourceAmount("")
+      setTargetAmount("")
     }
   }, [evmAddress])
 
@@ -95,26 +98,26 @@ const useSwap = ({ onStep }: useSwapOptions) => {
   const invert = useCallback(() => {
     const newSourceAsset = targetAsset
     const newTargetAsset = sourceAsset
-    const newSourceAmount = targetAssetAmount
-    const newTargetAmount = sourceAssetAmount
+    const newSourceAmount = targetAmount
+    const newTargetAmount = sourceAmount
     setSourceAsset(newSourceAsset)
     setTargetAsset(newTargetAsset)
-    setSourceAssetAmount(newSourceAmount)
-    setTargetAssetAmount(newTargetAmount)
-  }, [sourceAsset, targetAsset, sourceAssetAmount, targetAssetAmount])
+    setSourceAmount(newSourceAmount)
+    setTargetAmount(newTargetAmount)
+  }, [sourceAsset, targetAsset, sourceAmount, targetAmount])
 
   const onChangeSourceAssetAmount = useCallback(
     (amount: string) => {
-      setSourceAssetAmount(amount)
-      setTargetAssetAmount(BigNumber(amount).multipliedBy(sourceAsset.price).dividedBy(targetAsset.price).toFixed())
+      setSourceAmount(amount)
+      setTargetAmount(BigNumber(amount).multipliedBy(sourceAsset.price).dividedBy(targetAsset.price).toFixed())
     },
     [sourceAsset, targetAsset],
   )
 
   const onChangeTargetAssetAmount = useCallback(
     (amount: string) => {
-      setTargetAssetAmount(amount)
-      setSourceAssetAmount(BigNumber(amount).multipliedBy(targetAsset.price).dividedBy(sourceAsset.price).toFixed())
+      setTargetAmount(amount)
+      setSourceAmount(BigNumber(amount).multipliedBy(targetAsset.price).dividedBy(sourceAsset.price).toFixed())
     },
     [sourceAsset, targetAsset],
   )
@@ -125,91 +128,58 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       swapId,
       sourceAsset,
       targetAsset,
-      sourceAmount: sourceAssetAmount,
-      targetAmount: targetAssetAmount,
+      sourceAmount: sourceAmount,
+      targetAmount: targetAmount,
     }
 
     try {
       if (sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) throw new Error("Invalid source asset chain.")
       if (targetAsset.chain.id !== evmChain.id) throw new Error("Invalid target asset chain.")
 
-      setSourceAssetAmount("")
-      setTargetAssetAmount("")
+      setSourceAmount("")
+      setTargetAmount("")
 
       onStep({
         ...baseStep,
         id: "aztecToAztec_start",
       })
 
-      const onChainSourceAssetAmount = toOnChainAmount(sourceAssetAmount, sourceAsset.decimals)
-      const onChainTargetAssetAmount = toOnChainAmount(targetAssetAmount, targetAsset.decimals)
+      const onChainSourceAmount = toOnChainAmount(sourceAmount, sourceAsset.decimals)
+      const onChainTargetAmount = toOnChainAmount(targetAmount, targetAsset.decimals)
       const fillDeadline = 2 ** 32 - 1
       const nonce = Fr.random()
 
       const orderData = new OrderData({
-        sender: PRIVATE_SENDER,
+        sender: confidential ? PRIVATE_SENDER : getAztecAddressFromAzguardAccount(aztecAccount),
         recipient: padHex(evmWalletClient.account.address),
         inputToken: padHex(sourceAsset.address),
         outputToken: padHex(targetAsset.address),
-        amountIn: onChainSourceAssetAmount,
-        amountOut: onChainTargetAssetAmount,
+        amountIn: onChainSourceAmount,
+        amountOut: onChainTargetAmount,
         senderNonce: nonce.toBigInt(),
         originDomain: sourceAsset.chain.id,
         destinationDomain: targetAsset.chain.id,
         destinationSettler: padHex(settings.contractAddresses[targetAsset.chain.id].gateway as `0x${string}`),
         fillDeadline,
-        orderType: PRIVATE_ORDER,
+        orderType: confidential ? PRIVATE_ORDER : PUBLIC_ORDER,
         data: padHex("0x"),
       })
 
-      const response = await aztecWalletClient.execute([
-        {
-          kind: "register_contract",
-          chain: `aztec:11155111`,
-          address: settings.contractAddresses[AZTEC_7683_CHAIN_ID].gateway,
-          artifact: AztecGateway7683ContractArtifact,
-        },
-        {
-          kind: "register_contract",
-          chain: `aztec:11155111`,
-          address: sourceAsset.address,
-          artifact: TokenContractArtifact,
-        },
-        {
-          kind: "send_transaction",
-          account: aztecWalletClient.accounts[0],
-          actions: [
-            {
-              kind: "add_private_authwit",
-              content: {
-                kind: "call",
-                caller: settings.contractAddresses[AZTEC_7683_CHAIN_ID].gateway,
-                contract: sourceAsset.address,
-                method: "transfer_to_public",
-                args: [
-                  aztecWalletClient.accounts[0].split(":").at(-1),
-                  settings.contractAddresses[AZTEC_7683_CHAIN_ID].gateway,
-                  BigInt(onChainSourceAssetAmount),
-                  nonce,
-                ],
-              },
-            },
-            {
-              kind: "call",
-              contract: settings.contractAddresses[AZTEC_7683_CHAIN_ID].gateway,
-              method: "open_private",
-              args: [
-                {
-                  fill_deadline: fillDeadline,
-                  order_data: Array.from(hexToBytes(orderData.encode())),
-                  order_data_type: Array.from(hexToBytes(ORDER_DATA_TYPE)),
-                },
-              ],
-            },
-          ],
-        },
-      ])
-
+      const response = await aztecWalletClient.execute(
+        getAztecToEvmBatch({
+          confidential,
+          gatewayAddress: settings.contractAddresses[sourceAsset.chain.id].gateway as `0x${string}`,
+          sourceAsset,
+          sourceAmount: onChainSourceAmount,
+          order: {
+            orderData: orderData.encode(),
+            orderDataType: ORDER_DATA_TYPE,
+            fillDeadline,
+          },
+          nonce: nonce.toString(),
+          account: aztecAccount,
+        }),
+      )
       response.forEach((res) => {
         if (res.status === "failed") {
           throw new Error(res.error)
@@ -217,12 +187,11 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       })
 
       const txHash = (response[2] as any).result
-
-      console.log("transaction sent:", txHash)
+      console.log("aztec_to_evm: transaction sent:", txHash)
       onStep({
         ...baseStep,
         id: "aztecToEvm_orderOpened",
-        data: `https://aztecscan.xyz/tx-effects/${txHash}`,
+        data: `${settings.explorers[sourceAsset.chain.id]}/tx-effects/${txHash}`,
       })
 
       const aztecNode = await createAztecNodeClient(settings.rpc[sourceAsset.chain.id])
@@ -245,7 +214,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       // TODO: handle multiple orders in the same tx
       const [resolvedOrder] = getResolvedOrdersByLogs(logs)
 
-      console.log(`detected order: ${resolvedOrder.orderId}. waiting to be filled ...`)
+      console.log(`aztec_to_evm: detected order: ${resolvedOrder.orderId}. waiting to be filled ...`)
 
       // NOTE: wait for the filler to fill the order
       const evmPublicClient = createPublicClient({
@@ -263,7 +232,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         await sleep(5000)
       }
 
-      console.log("order filled succesfully!")
+      console.log("aztec_to_evm: order filled succesfully!")
       onStep({
         ...baseStep,
         id: "aztecToEvm_orderFilled",
@@ -279,10 +248,13 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       console.error(err)
     }
   }, [
+    aztecAccount,
+    evmChain,
+    confidential,
     sourceAsset,
     targetAsset,
-    sourceAssetAmount,
-    targetAssetAmount,
+    sourceAmount,
+    targetAmount,
     aztecWalletClient,
     evmWalletClient,
     refreshBalanceByAsset,
@@ -295,23 +267,23 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       swapId,
       sourceAsset,
       targetAsset,
-      sourceAmount: sourceAssetAmount,
-      targetAmount: targetAssetAmount,
+      sourceAmount: sourceAmount,
+      targetAmount: targetAmount,
     }
 
     try {
       if (sourceAsset.chain.id !== evmChain.id) throw new Error("Invalid source asset chain.")
       if (targetAsset.chain.id !== AZTEC_7683_CHAIN_ID) throw new Error("Invalid target asset chain")
-      setSourceAssetAmount("")
-      setTargetAssetAmount("")
+      setSourceAmount("")
+      setTargetAmount("")
 
       onStep({
         ...baseStep,
         id: "evmToAztec_start",
       })
 
-      const onChainSourceAssetAmount = toOnChainAmount(sourceAssetAmount, sourceAsset.decimals)
-      const onChainTargetAssetAmount = toOnChainAmount(targetAssetAmount, targetAsset.decimals)
+      const onChainSourceAmount = toOnChainAmount(sourceAmount, sourceAsset.decimals)
+      const onChainTargetAmount = toOnChainAmount(targetAmount, targetAsset.decimals)
       const fillDeadline = 2 ** 32 - 1
       const nonce = Fr.random()
       const secret = Fr.random()
@@ -321,8 +293,8 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         recipient: (await poseidon2Hash([secret])).toString(),
         inputToken: padHex(sourceAsset.address),
         outputToken: padHex(targetAsset.address),
-        amountIn: onChainSourceAssetAmount,
-        amountOut: onChainTargetAssetAmount,
+        amountIn: onChainSourceAmount,
+        amountOut: onChainTargetAmount,
         senderNonce: nonce.toBigInt(),
         originDomain: sourceAsset.chain.id,
         destinationDomain: targetAsset.chain.id,
@@ -341,7 +313,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         chain: sourceAsset.chain as Chain,
         address: sourceAsset.address,
         functionName: "approve",
-        args: [settings.contractAddresses[sourceAsset.chain.id].gateway as `0x${string}`, onChainSourceAssetAmount],
+        args: [settings.contractAddresses[sourceAsset.chain.id].gateway as `0x${string}`, onChainSourceAmount],
         abi: erc20Abi,
       })
       await waitForTransactionReceipt(evmPublicClient, { hash: txHash })
@@ -365,14 +337,14 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         id: "evmToAztec_orderOpened",
         data: `${settings.explorers[sourceAsset.chain.id]}/tx/${txHash}`,
       })
-      console.log("transaction sent:", txHash)
+      console.log("evm_to_aztec: transaction sent:", txHash)
       const receipt = await waitForTransactionReceipt(evmPublicClient, { hash: txHash })
       const log = (receipt.logs as any).find(
         ({ topics }) => topics[0] === "0x3448bbc2203c608599ad448eeb1007cea04b788ac631f9f558e8dd01a3c27b3d", // Open
       )
 
       const orderId = Fr.fromBufferReduce(Buffer.from(log.topics[1].slice(2), "hex")).toString()
-      console.log("order id:", orderId)
+      console.log("evm_to_aztec: order id:", orderId)
 
       const aztecNode = await createAztecNodeClient(settings.rpc[targetAsset.chain.id])
       while (true) {
@@ -398,7 +370,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
           let log
           while (true) {
             try {
-              console.log(`order ${orderId} filled succesfully. claiming it ...`)
+              console.log(`evm_to_aztec: order ${orderId} filled succesfully. claiming it ...`)
 
               await sleep(3000)
               // TODO: understand why if i use fromBlock and toBlock i always receive the penultimante log.
@@ -454,7 +426,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
             }
           })
 
-          console.log(`order ${orderId} claimed`)
+          console.log(`evm_to_aztec: order ${orderId} claimed`)
           onStep({
             ...baseStep,
             id: "evmToAztec_orderClaimed",
@@ -473,8 +445,8 @@ const useSwap = ({ onStep }: useSwapOptions) => {
   }, [
     sourceAsset,
     targetAsset,
-    sourceAssetAmount,
-    targetAssetAmount,
+    sourceAmount,
+    targetAmount,
     evmChain,
     aztecAccount,
     aztecWalletClient,
@@ -500,13 +472,13 @@ const useSwap = ({ onStep }: useSwapOptions) => {
     invert,
     onChangeSourceAssetAmount,
     onChangeTargetAssetAmount,
-    setConfidential,
-    setTargetAssetAmount,
+    updateConfidential,
+    setTargetAmount,
     sourceAsset,
-    sourceAssetAmount,
+    sourceAmount,
     swap,
     targetAsset,
-    targetAssetAmount,
+    targetAmount,
     evmToAztec,
   }
 }

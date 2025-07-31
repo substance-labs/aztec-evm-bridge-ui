@@ -1,6 +1,7 @@
 import { createContext } from "react"
 import { useState, useCallback } from "react"
 import { AzguardClient } from "@azguardwallet/client"
+import { getAztecAddressFromAzguardAccount } from "../utils/account"
 
 import type { ReactNode } from "react"
 
@@ -24,7 +25,7 @@ export const AztecWalletProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsConnecting(true)
       const azguard = await AzguardClient.create()
-      await azguard.connect({ name: "ZkIco" }, [
+      await azguard.connect({ name: "Aztec <> EVM bridge" }, [
         {
           chains: [`aztec:11155111`],
           methods: [
@@ -36,6 +37,7 @@ export const AztecWalletProvider = ({ children }: { children: ReactNode }) => {
             "register_token",
             "simulate_views",
             "add_private_authwit",
+            "add_public_authwit",
           ],
         },
       ])
@@ -57,13 +59,19 @@ export const AztecWalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
-  const formattedAccount = selectedAccount
-    ? `${selectedAccount.split(":").at(-1)!.slice(0, 6)}…${selectedAccount.split(":").at(-1)!.slice(-6)}`
-    : ""
+  const address = selectedAccount ? getAztecAddressFromAzguardAccount(selectedAccount) : null
+  const formattedAccount = selectedAccount ? `${address!.slice(0, 6)}…${address!.slice(-6)}` : ""
 
   return (
     <AztecWalletContext.Provider
-      value={{ isConnected: !!client, client, connect, account: selectedAccount, formattedAccount, isConnecting }}
+      value={{
+        account: selectedAccount,
+        client,
+        connect,
+        formattedAccount,
+        isConnected: !!client,
+        isConnecting,
+      }}
     >
       {children}
     </AztecWalletContext.Provider>

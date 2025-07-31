@@ -1,9 +1,11 @@
 import { Fragment, useMemo, useState } from "react"
+import { useAccount } from "wagmi"
+import { Wallet } from "lucide-react"
+
+import useAztecWallet from "../../../hooks/use-aztec-wallet"
+
 import Button from "../../base/Button"
 import WalletModal from "../../modals/WalletModal"
-import { Wallet } from "lucide-react"
-import useAztecWallet from "../../../hooks/use-aztec-wallet"
-import { useAccount } from "wagmi"
 
 type ConnectButtonProps = {
   connected: boolean

@@ -31,6 +31,7 @@ const settings: Settings = {
     [AZTEC_7683_CHAIN_ID]: "https://aztec-alpha-testnet-fullnode.zkv.xyz/",
   },
   explorers: {
+    [AZTEC_7683_CHAIN_ID]: "https://aztecscan.xyz",
     [baseSepolia.id]: "https://sepolia.basescan.org",
   },
   contractAddresses: {
