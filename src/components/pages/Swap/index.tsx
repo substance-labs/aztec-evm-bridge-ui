@@ -230,6 +230,7 @@ const Swap = () => {
         </div>
         <div className="mt-3">
           <SwapLine
+            title="Sell"
             amount={sourceAmount}
             asset={sourceAsset}
             onChangeAmount={onChangeSourceAssetAmount}
@@ -247,14 +248,15 @@ const Swap = () => {
         </div>
         <div className="mt-1">
           <SwapLine
+            title="Buy"
             amount={targetAmount}
             asset={targetAsset}
             onChangeAmount={onChangeTargetAssetAmount}
             withArrowDown
           />
         </div>
-        <div className="mt-2">
-          <Button disabled={btnDisabled} onClick={onButtonClick}>
+        <div className="mt-1">
+          <Button className="h-16 text-lg" disabled={btnDisabled} onClick={onButtonClick}>
             {buttonText}
           </Button>
         </div>

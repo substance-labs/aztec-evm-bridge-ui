@@ -20,7 +20,7 @@ const Button: React.FC<ButtonProps> = ({ children, className = "", ...props }) =
       {...props}
       className={`
         inline-flex items-center justify-center
-        rounded-xl font-semibold text-lg
+        rounded-xl font-semibold
         px-3
         transition-colors duration-150
         ${defaultBg}

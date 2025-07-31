@@ -17,12 +17,12 @@ const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
   return (
     <Modal visible={visible} title={"Wallets"} onClose={onClose}>
       {!isEvmWalletConnected ? (
-        <Button className="mb-4 h-10" onClick={() => open()}>
+        <Button className="mb-4 h-10 text-sm" onClick={() => open()}>
           Connect EVM wallet
         </Button>
       ) : (
         <button
-          className="text-center mb-4 bg-gray-100 h-10 w-54 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+          className="text-center mb-4 bg-gray-100 h-10 w-54 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-sm"
           onClick={() => copyToClipboard(evmAddress)}
           disabled={!isEvmWalletConnected}
         >
@@ -31,12 +31,12 @@ const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
       )}
 
       {!isAztecWalletConnected ? (
-        <Button className="h-10 w-54" onClick={connect}>
+        <Button className="h-10 w-54 text-sm" onClick={connect}>
           Connect Aztec wallet
         </Button>
       ) : (
         <button
-          className="text-center bg-gray-100 h-10 w-54 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+          className="text-center bg-gray-100 h-10 w-54 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-sm"
           onClick={() => copyToClipboard(account)}
           disabled={!isAztecWalletConnected}
         >
