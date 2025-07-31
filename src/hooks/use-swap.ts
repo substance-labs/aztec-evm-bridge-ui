@@ -11,7 +11,8 @@ import settings from "../settings"
 import { AztecGateway7683ContractArtifact } from "../utils/artifacts/AztecGateway7683/AztecGateway7683"
 import {
   AZTEC_7683_CHAIN_ID,
-  INITIATED_PRIVATELY,
+  FILLED,
+  FILLED_PRIVATELY,
   ORDER_DATA_TYPE,
   PRIVATE_ORDER,
   PRIVATE_SENDER,
@@ -40,6 +41,7 @@ export type StepId =
   | "evmToAztec_orderClaimed"
   | "error"
 export interface Step {
+  confidential: boolean
   swapId: string
   id: StepId
   sourceAsset: Asset
@@ -125,6 +127,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
   const aztecToEvm = useCallback(async () => {
     const swapId = Fr.random().toString()
     const baseStep = {
+      confidential,
       swapId,
       sourceAsset,
       targetAsset,
@@ -264,6 +267,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
   const evmToAztec = useCallback(async () => {
     const swapId = Fr.random().toString()
     const baseStep = {
+      confidential,
       swapId,
       sourceAsset,
       targetAsset,
@@ -286,11 +290,13 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       const onChainTargetAmount = toOnChainAmount(targetAmount, targetAsset.decimals)
       const fillDeadline = 2 ** 32 - 1
       const nonce = Fr.random()
-      const secret = Fr.random()
+      const secret = confidential ? Fr.random() : null
 
       const orderData = new OrderData({
         sender: padHex(evmWalletClient.account.address),
-        recipient: (await poseidon2Hash([secret])).toString(),
+        recipient: confidential
+          ? (await poseidon2Hash([secret])).toString()
+          : getAztecAddressFromAzguardAccount(aztecAccount),
         inputToken: padHex(sourceAsset.address),
         outputToken: padHex(targetAsset.address),
         amountIn: onChainSourceAmount,
@@ -300,7 +306,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         destinationDomain: targetAsset.chain.id,
         destinationSettler: padHex(settings.contractAddresses[targetAsset.chain.id].gateway as `0x${string}`),
         fillDeadline,
-        orderType: PRIVATE_ORDER,
+        orderType: confidential ? PRIVATE_ORDER : PUBLIC_ORDER,
         data: padHex("0x"),
       })
 
@@ -365,8 +371,8 @@ const useSwap = ({ onStep }: useSwapOptions) => {
         if (response.status === "failed") {
           throw new Error(response.error)
         }
-        const status = BigInt((response as OkResult<SimulateViewsResult>).result.encoded[0][0]).toString()
-        if (parseInt(status) === INITIATED_PRIVATELY) {
+        const status = parseInt(BigInt((response as OkResult<SimulateViewsResult>).result.encoded[0][0]).toString())
+        if (status === FILLED_PRIVATELY || status === FILLED) {
           let log
           while (true) {
             try {
@@ -389,11 +395,14 @@ const useSwap = ({ onStep }: useSwapOptions) => {
             }
           }
 
+          console.log(`evm_to_aztec: order ${orderId} filled`)
           onStep({
             ...baseStep,
             id: "evmToAztec_orderFilled",
           })
+          if (!confidential) return
 
+          // NOTE: private intents must be claimed
           const response = await aztecWalletClient.execute([
             {
               kind: "register_contract",
@@ -419,7 +428,6 @@ const useSwap = ({ onStep }: useSwapOptions) => {
               ],
             },
           ])
-
           response.forEach((res) => {
             if (res.status === "failed") {
               throw new Error(res.error)
@@ -431,7 +439,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
             ...baseStep,
             id: "evmToAztec_orderClaimed",
           })
-          break
+          return
         }
         await sleep(3000)
       }
@@ -443,6 +451,7 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       })
     }
   }, [
+    confidential,
     sourceAsset,
     targetAsset,
     sourceAmount,

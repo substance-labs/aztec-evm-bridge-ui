@@ -94,17 +94,24 @@ const Swap = () => {
         swapIdsToasts.current[step.swapId] = id
       }
       if (step.id === "evmToAztec_orderFilled") {
+        // NOTE: no need to claim_private for public intents
         const id = swapIdsToasts.current[step.swapId]
         toast.update(id, {
           render: (
             <div>
               <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
-              <p className="text-gray-600 text-sm">Order filled! Generating the proof needed to claim it ...</p>
+              <p className="text-gray-600 text-sm">
+                {step.confidential ? "Order filled! Generating the proof needed to claim it ..." : "Swap completed!"}
+              </p>
             </div>
           ),
           type: "success",
-          isLoading: true,
+          isLoading: step.confidential,
+          autoClose: !step.confidential ? 5000 : false,
         })
+        if (!step.confidential) {
+          delete swapIdsToasts.current[step.swapId]
+        }
       }
       if (step.id === "error") {
         const id = swapIdsToasts.current[step.swapId]
