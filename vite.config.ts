@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       "process.env": JSON.stringify({
         NODE_DEBUG: env.NODE_DEBUG,
         REOWN_PROJECT_ID: env.REOWN_PROJECT_ID,
+        AZTEC_TOKEN_FAUCET_URL: env.AZTEC_TOKEN_FAUCET_URL,
       }),
     },
   }

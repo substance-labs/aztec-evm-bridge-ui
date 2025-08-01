@@ -224,8 +224,14 @@ const useAssets = (): UseAssetsResult => {
 
   const refreshBalanceByAsset = useCallback(
     async (asset: Asset) => {
-      if (asset.chain.id === evmChain.id) refreshEvmBalanceByAsset(asset)
-      if (asset.chain.id === AZTEC_7683_CHAIN_ID) refreshAztecBalanceByAsset(asset)
+      if (asset.chain.id === evmChain.id) {
+        refreshEvmBalanceByAsset(asset)
+        return
+      }
+      if (asset.chain.id === AZTEC_7683_CHAIN_ID) {
+        refreshAztecBalanceByAsset(asset)
+        return
+      }
       throw new Error("Invalid asset")
     },
     [evmChain, refreshAztecBalanceByAsset, refreshEvmBalanceByAsset],

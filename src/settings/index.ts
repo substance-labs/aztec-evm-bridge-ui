@@ -24,6 +24,7 @@ type Settings = {
   assets: Asset[]
   rpc: Rpcs
   explorers: Explorers
+  aztecTokenFaucetUrl: string
 }
 
 const settings: Settings = {
@@ -67,6 +68,7 @@ const settings: Settings = {
       symbol: "WETH",
     },
   ],
+  aztecTokenFaucetUrl: process.env.AZTEC_TOKEN_FAUCET_URL as string,
 }
 
 export default settings

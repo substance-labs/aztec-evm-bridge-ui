@@ -469,6 +469,7 @@ const useSwap = ({ onSecret, onStep }: useSwapOptions) => {
     aztecWalletClient,
     evmWalletClient,
     onStep,
+    onSecret,
   ])
 
   const swap = useCallback(async () => {

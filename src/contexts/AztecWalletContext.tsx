@@ -1,7 +1,7 @@
 import { createContext } from "react"
 import { useState, useCallback } from "react"
 import { AzguardClient } from "@azguardwallet/client"
-import { getAztecAddressFromAzguardAccount } from "../utils/account"
+import { formatAddress, getAztecAddressFromAzguardAccount } from "../utils/account"
 
 import type { ReactNode } from "react"
 
@@ -60,7 +60,7 @@ export const AztecWalletProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const address = selectedAccount ? getAztecAddressFromAzguardAccount(selectedAccount) : null
-  const formattedAccount = selectedAccount ? `${address!.slice(0, 6)}…${address!.slice(-6)}` : ""
+  const formattedAccount = selectedAccount ? formatAddress(address) : ""
 
   return (
     <AztecWalletContext.Provider

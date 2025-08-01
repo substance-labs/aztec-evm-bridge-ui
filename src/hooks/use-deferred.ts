@@ -3,12 +3,12 @@ import { useRef } from "react"
 type DeferredPromise<T> = {
   promise: Promise<T>
   resolve: (value: T) => void
-  reject: (reason?: any) => void
+  reject: (reason?: string | null) => void
 }
 
 export function createDeferred<T>(): DeferredPromise<T> {
   let resolve!: (value: T) => void
-  let reject!: (reason?: any) => void
+  let reject!: (reason?: string | null) => void
 
   const promise = new Promise<T>((res, rej) => {
     resolve = res
