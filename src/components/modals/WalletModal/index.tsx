@@ -7,7 +7,6 @@ import useAztecWallet from "../../../hooks/use-aztec-wallet"
 import Button from "../../base/Button"
 
 import type { ModalProps } from "../Modal"
-import { copyToClipboard } from "../../../utils/clipboard"
 
 const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
   const { account, formattedAccount, isConnected: isAztecWalletConnected, connect } = useAztecWallet()
@@ -23,7 +22,7 @@ const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
       ) : (
         <button
           className="text-center mb-4 bg-gray-100 h-10 w-54 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-sm"
-          onClick={() => copyToClipboard(evmAddress)}
+          onClick={() => navigator.clipboard.writeText(evmAddress)}
           disabled={!isEvmWalletConnected}
         >
           <span className="font-mono text-xs text-gray-700 text-center">{`evm:${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}`}</span>
@@ -37,7 +36,7 @@ const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
       ) : (
         <button
           className="text-center bg-gray-100 h-10 w-54 hover:bg-gray-200 rounded-xl cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-sm"
-          onClick={() => copyToClipboard(account)}
+          onClick={() => navigator.clipboard.writeText(account)}
           disabled={!isAztecWalletConnected}
         >
           <span className="font-mono text-xs text-gray-700">{`aztec:${formattedAccount}`}</span>

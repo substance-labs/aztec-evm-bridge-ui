@@ -55,10 +55,11 @@ export interface Step {
   data?: string
 }
 export interface useSwapOptions {
-  onStep: (baseStep: Step) => void
+  onSecret: (secret: string) => Promise<boolean>
+  onStep: (step: Step) => void
 }
 
-const useSwap = ({ onStep }: useSwapOptions) => {
+const useSwap = ({ onSecret, onStep }: useSwapOptions) => {
   const { confidential, updateConfidential } = useAppStore()
   const { assets, refreshBalanceByAsset } = useAssets()
   const { data: evmWalletClient } = useWalletClient()
@@ -295,6 +296,9 @@ const useSwap = ({ onStep }: useSwapOptions) => {
       const fillDeadline = 2 ** 32 - 1
       const nonce = Fr.random()
       const secret = confidential ? Fr.random() : null
+
+      const acknowledged = await onSecret(secret.toString())
+      if (!acknowledged) throw new Error("Secret explanation not acknowledged")
 
       const orderData = new OrderData({
         sender: padHex(evmWalletClient.account.address),

@@ -17,9 +17,15 @@ import Toggle from "../../base/Toogle"
 import SwapLine from "../../complex/SwapLine"
 import Button from "../../base/Button"
 import MainLayout from "../../layouts/MainLayout"
+import SecretModal from "../../modals/SecretModal"
+import { useDeferred } from "../../../hooks/use-deferred"
 
 const Swap = () => {
-  const [showSettings, setShowSettings] = useState(false)
+  const [showSettings, setShowSettings] = useState<boolean>(false)
+  const [secret, setSecret] = useState<string | null>(null)
+
+  const { get: getUnderstood, reset: resetUnderstood } = useDeferred()
+
   const { ref } = useOutsideAlerter({
     trigger: () => setShowSettings(false),
   })
@@ -37,6 +43,15 @@ const Swap = () => {
     targetAsset,
     targetAmount,
   } = useSwap({
+    onSecret: async (secret) => {
+      try {
+        setSecret(secret)
+        await getUnderstood().promise
+        return true
+      } catch (err) {
+        return false
+      }
+    },
     onStep: (step) => {
       const title = `Swapping ${step.sourceAmount} ${step.sourceAsset.symbol} on ${sourceAsset.chain.name} for at least ${step.targetAmount} ${step.targetAsset.symbol} on ${targetAsset.chain.name}`
       if (step.id === "aztecToAztec_start") {
@@ -181,6 +196,18 @@ const Swap = () => {
     return isConnecting || BigNumber(sourceAmount).isGreaterThan(sourceAsset?.offchainBalance)
   }, [selectedEvmChain, isConnectingEvmWallet, isConnectingAztecWallet, sourceAmount, sourceAsset])
 
+  const onUnderstand = useCallback(() => {
+    getUnderstood().resolve(null)
+    resetUnderstood()
+    setSecret(null)
+  }, [getUnderstood, resetUnderstood])
+
+  const onNotUnderstand = useCallback(() => {
+    getUnderstood().reject(null)
+    resetUnderstood()
+    setSecret(null)
+  }, [getUnderstood, resetUnderstood])
+
   return (
     <MainLayout>
       <Box className="max-w-md mx-auto pt-3 pb-1 pl-1 pr-1 mt-10">
@@ -259,6 +286,7 @@ const Swap = () => {
           </Button>
         </div>
       </Box>
+      <SecretModal visible={Boolean(secret)} secret={secret} onClose={onNotUnderstand} onUnderstand={onUnderstand} />
     </MainLayout>
   )
 }
