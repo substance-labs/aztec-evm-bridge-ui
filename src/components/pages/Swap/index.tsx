@@ -160,14 +160,18 @@ const Swap = () => {
       connect()
       return
     }
-    if (!isEvmWalletConnected && !isConnectingEvmWallet && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) {
+    if (
+      !isEvmWalletConnected &&
+      !isConnectingEvmWallet &&
+      (sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID || confidential)
+    ) {
       open()
       return
     }
 
     swap()
   }, [
-    swap,
+    confidential,
     isAztecWalletConnected,
     sourceAsset,
     isConnectingEvmWallet,
@@ -175,23 +179,22 @@ const Swap = () => {
     isEvmWalletConnected,
     connect,
     open,
+    swap,
   ])
 
   const buttonText = useMemo(() => {
-    if (!isAztecWalletConnected && !isConnectingAztecWallet) return "Connect Aztec Wallet"
-    if (!isEvmWalletConnected && !isConnectingEvmWallet && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID)
-      return "Connect EVM Wallet"
-
     if (isConnectingAztecWallet || isConnectingEvmWallet) return "Connecting ..."
+    if (!isAztecWalletConnected) return "Connect Aztec Wallet"
+    if (!isEvmWalletConnected && (sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID || confidential))
+      return "Connect EVM Wallet"
     if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID)
       return "Wrong network"
-
     if (sourceAmount === "") return "Enter an amount ..."
     if (BigNumber(sourceAmount).isGreaterThan(sourceAsset?.offchainBalance)) return "Insufficient balance"
-
     if (isAztecWalletConnected && sourceAsset.chain.id === AZTEC_7683_CHAIN_ID) return "Confirm"
     if (isEvmWalletConnected && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) return "Confirm"
   }, [
+    confidential,
     isAztecWalletConnected,
     isEvmWalletConnected,
     sourceAsset,
