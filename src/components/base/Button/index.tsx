@@ -11,7 +11,7 @@ const Button: React.FC<ButtonProps> = ({ children, className = "", ...props }) =
   const hasBg = hasClassWithPrefix(className, "bg-")
   const hasHeight = hasClassWithPrefix(className, "h-")
   const hasWidth = hasClassWithPrefix(className, "w-")
-  const hasRounded = hasClassWithPrefix(className, "w-")
+  const hasRounded = hasClassWithPrefix(className, "rounded-")
   const defaultBg = hasBg ? "" : "bg-purple-200 text-purple-600 hover:bg-purple-300 active:bg-purple-400"
   const defaultHeight = hasHeight ? "" : "h-14"
   const defaultWidth = hasWidth ? "" : "w-full"
