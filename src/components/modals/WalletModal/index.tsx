@@ -16,7 +16,7 @@ const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
   return (
     <Modal visible={visible} title={"Wallets"} onClose={onClose}>
       {!isEvmWalletConnected ? (
-        <Button className="mb-4 h-10 text-sm" onClick={() => open()}>
+        <Button className="mb-4 h-10 w-54 text-sm" onClick={() => open()}>
           Connect EVM wallet
         </Button>
       ) : (
