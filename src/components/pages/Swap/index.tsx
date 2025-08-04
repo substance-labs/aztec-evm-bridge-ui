@@ -205,10 +205,10 @@ const Swap = () => {
   ])
 
   const btnDisabled = useMemo(() => {
+    if (isConnectingEvmWallet || isConnectingAztecWallet) return true
     if (!isAztecWalletConnected || !isEvmWalletConnected) return false
     if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID) return true
-    const isConnecting = isConnectingEvmWallet || isConnectingAztecWallet
-    return isConnecting || BigNumber(sourceAmount).isGreaterThan(sourceAsset?.offchainBalance)
+    return BigNumber(sourceAmount).isGreaterThan(sourceAsset?.offchainBalance)
   }, [
     isAztecWalletConnected,
     isEvmWalletConnected,
