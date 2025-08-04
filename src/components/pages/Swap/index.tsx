@@ -22,7 +22,7 @@ import SwapLine from "../../complex/SwapLine"
 import Button from "../../base/Button"
 import MainLayout from "../../layouts/MainLayout"
 import SecretModal from "../../modals/SecretModal"
-import RegisterToast from "../../complex/RegisterToast"
+import FaucetRegisterToast from "../../complex/FaucetRegisterToast"
 
 const Swap = () => {
   const [showSettings, setShowSettings] = useState<boolean>(false)
@@ -276,7 +276,7 @@ const Swap = () => {
       const { senderAddress } = await res.json()
       console.log("senderAddress:", senderAddress)
       toast.success(
-        <RegisterToast
+        <FaucetRegisterToast
           senderAddress={senderAddress}
           sourceAsset={sourceAsset}
           confidential={confidential}

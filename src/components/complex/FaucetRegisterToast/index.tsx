@@ -6,7 +6,7 @@ import Button from "../../base/Button"
 
 import type { Asset } from "../../../types"
 
-const RegisterToast = ({
+const FaucetRegisterToast = ({
   senderAddress,
   sourceAsset,
   confidential,
@@ -50,4 +50,4 @@ const RegisterToast = ({
   )
 }
 
-export default RegisterToast
+export default FaucetRegisterToast
