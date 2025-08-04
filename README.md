@@ -34,12 +34,7 @@ Copy the example `.env` file and configure the required values:
 cp .env.example .env
 ```
 
-Update `.env` with your values:
-
-```
-NODE_DEBUG=
-REOWN_PROJECT_ID=
-```
+Update `.env` with your values.
 
 ## 🚀 Available Scripts
 
