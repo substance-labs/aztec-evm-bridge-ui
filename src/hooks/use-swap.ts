@@ -361,14 +361,16 @@ const useSwap = ({ onSecret, onStep }: useSwapOptions) => {
       console.log("evm_to_aztec: order id:", orderId)
 
       const aztecNode = await createAztecNodeClient(settings.rpc[targetAsset.chain.id])
+      await aztecWalletClient.execute([
+        {
+          kind: "register_contract",
+          chain: `aztec:11155111`,
+          address: settings.contractAddresses[targetAsset.chain.id].gateway,
+          artifact: AztecGateway7683ContractArtifact,
+        },
+      ])
       while (true) {
         const [response] = await aztecWalletClient.execute([
-          {
-            kind: "register_contract",
-            chain: `aztec:11155111`,
-            address: settings.contractAddresses[targetAsset.chain.id].gateway,
-            artifact: AztecGateway7683ContractArtifact,
-          },
           {
             kind: "simulate_views",
             account: aztecAccount,
