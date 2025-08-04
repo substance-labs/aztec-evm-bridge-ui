@@ -364,6 +364,12 @@ const useSwap = ({ onSecret, onStep }: useSwapOptions) => {
       while (true) {
         const [response] = await aztecWalletClient.execute([
           {
+            kind: "register_contract",
+            chain: `aztec:11155111`,
+            address: settings.contractAddresses[targetAsset.chain.id].gateway,
+            artifact: AztecGateway7683ContractArtifact,
+          },
+          {
             kind: "simulate_views",
             account: aztecAccount,
             calls: [
