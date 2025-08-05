@@ -23,7 +23,7 @@ nvm use
 ### 3. Install dependencies
 
 ```bash
-npm install
+yarn install
 ```
 
 ### 4. Set up environment variables
@@ -41,17 +41,17 @@ Update `.env` with your values.
 ### Start in development mode
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 ### Build for production
 
 ```bash
-npm run build
+yarn build
 ```
 
 ### Preview production build
 
 ```bash
-npm run preview
+yarn preview
 ```
