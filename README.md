@@ -8,8 +8,8 @@
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-org/aztec-evm-intent-ui.git
-cd aztec-evm-intent-ui
+git clone https://github.com/substance-labs/aztec-evm-bridge-ui
+cd aztec-evm-bridge-ui
 ```
 
 ### 2. Use Node.js v22
