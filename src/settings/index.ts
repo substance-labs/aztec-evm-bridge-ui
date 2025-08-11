@@ -40,7 +40,7 @@ const settings: Settings = {
       gateway: "0xe91C15EF8cE69e7bd90a68E4aC576A242C84eAdF",
     },
     [AZTEC_7683_CHAIN_ID]: {
-      gateway: "0x1c48c2d7dca7291d2ab5935a684c160628be3a4a5a4ca670bcb4716233dc68cf",
+      gateway: "0x1bffdfe300ac79d18c3c86718ebf770b2142d5fba9a906e3a4cd0e9774623f3a",
     },
   },
   assets: [

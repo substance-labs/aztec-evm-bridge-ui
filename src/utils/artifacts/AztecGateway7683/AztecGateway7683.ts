@@ -125,7 +125,12 @@ export class AztecGateway7683Contract extends ContractBase {
   }
 
   public static get storage(): ContractStorageLayout<
-    "config" | "claimable_orders" | "order_status" | "used_nonces" | "orders_settlement_block_numbers"
+    | "config"
+    | "claimable_orders"
+    | "order_status"
+    | "used_nonces"
+    | "orders_settlement_block_numbers"
+    | "orders_refund_block_numbers"
   > {
     return {
       config: {
@@ -143,8 +148,16 @@ export class AztecGateway7683Contract extends ContractBase {
       orders_settlement_block_numbers: {
         slot: new Fr(8n),
       },
+      orders_refund_block_numbers: {
+        slot: new Fr(9n),
+      },
     } as ContractStorageLayout<
-      "config" | "claimable_orders" | "order_status" | "used_nonces" | "orders_settlement_block_numbers"
+      | "config"
+      | "claimable_orders"
+      | "order_status"
+      | "used_nonces"
+      | "orders_settlement_block_numbers"
+      | "orders_refund_block_numbers"
     >
   }
 
@@ -206,6 +219,10 @@ export class AztecGateway7683Contract extends ContractBase {
       origin_data_bytes: (bigint | number)[],
       filler_data_bytes: (bigint | number)[],
     ) => ContractFunctionInteraction) &
+      Pick<ContractMethod, "selector">
+
+    /** get_order_refund_block_number(order_id: field) */
+    get_order_refund_block_number: ((order_id: FieldLike) => ContractFunctionInteraction) &
       Pick<ContractMethod, "selector">
 
     /** get_order_settlement_block_number(order_id: field) */
