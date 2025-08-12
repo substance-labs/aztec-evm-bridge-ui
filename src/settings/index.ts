@@ -37,10 +37,10 @@ const settings: Settings = {
   },
   contractAddresses: {
     [baseSepolia.id]: {
-      gateway: "0xe91C15EF8cE69e7bd90a68E4aC576A242C84eAdF",
+      gateway: "0x0Bf4eD5a115e6Ad789A88c21e9B75821Cc7B2e6f",
     },
     [AZTEC_7683_CHAIN_ID]: {
-      gateway: "0x1bffdfe300ac79d18c3c86718ebf770b2142d5fba9a906e3a4cd0e9774623f3a",
+      gateway: "0x1b4f272b622a493184f6fbb83fc7631f1ce9bad68d4d4c150dc55eed5f100d73",
     },
   },
   assets: [
