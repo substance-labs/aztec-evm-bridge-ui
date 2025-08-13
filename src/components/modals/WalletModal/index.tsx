@@ -31,7 +31,7 @@ const WalletModal: React.FC<ModalProps> = ({ visible, onClose }) => {
 
       {!isAztecWalletConnected ? (
         <Button className="h-10 w-54 text-sm" onClick={connect}>
-          Connect Aztec wallet
+          Connect Azguard wallet
         </Button>
       ) : (
         <button
