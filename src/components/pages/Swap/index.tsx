@@ -184,7 +184,7 @@ const Swap = () => {
 
   const buttonText = useMemo(() => {
     if (isConnectingAztecWallet || isConnectingEvmWallet) return "Connecting ..."
-    if (!isAztecWalletConnected) return "Connect Aztec Wallet"
+    if (!isAztecWalletConnected) return "Connect Azguard Wallet"
     if (!isEvmWalletConnected && (sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID || confidential))
       return "Connect EVM Wallet"
     if (selectedEvmChain?.id !== sourceAsset.chain.id && sourceAsset.chain.id !== AZTEC_7683_CHAIN_ID)
