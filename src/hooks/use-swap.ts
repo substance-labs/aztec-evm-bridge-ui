@@ -252,6 +252,7 @@ const useSwap = ({ onSecret, onStep }: useSwapOptions) => {
       onStep({
         ...baseStep,
         id: "error",
+        data: err.message
       })
       console.error(err)
     }
@@ -464,6 +465,7 @@ const useSwap = ({ onSecret, onStep }: useSwapOptions) => {
       onStep({
         ...baseStep,
         id: "error",
+        data: err.message
       })
     }
   }, [

@@ -136,7 +136,19 @@ const Swap = () => {
       }
       if (step.id === "error") {
         const id = swapIdsToasts.current[step.swapId]
-        toast.dismiss(id)
+        toast.update(id, {
+          render: (
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800 mb-2">{title}</h2>
+              <p className="text-gray-600 text-sm">
+                {step.data}
+              </p>
+            </div>
+          ),
+          type: "error",
+          isLoading: false,
+          closeButton: true
+        })
         delete swapIdsToasts.current[step.swapId]
       }
     },
